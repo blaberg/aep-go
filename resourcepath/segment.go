@@ -5,7 +5,7 @@ import "strings"
 // RevisionSeparator is the separator character used to separate resource IDs from revision IDs.
 const RevisionSeparator = '@'
 
-// Segment is a segment of a resource name or a resource name pattern.
+// Segment is a segment of a resource path or a resource path pattern.
 //
 // EBNF
 //
@@ -19,7 +19,7 @@ func (s Segment) IsVariable() bool {
 }
 
 // Literal returns the literal value of the segment.
-// For variables, the literal value is the name of the variable.
+// For variables, the literal value is the path of the variable.
 func (s Segment) Literal() Literal {
 	switch {
 	case s.IsVariable():
@@ -34,7 +34,7 @@ func (s Segment) IsWildcard() bool {
 	return s == Wildcard
 }
 
-// Literal is the literal part of a resource name segment.
+// Literal is the literal part of a resource path segment.
 //
 // EBNF
 //

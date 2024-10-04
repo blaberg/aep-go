@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-// Sscan scans a resource name, storing successive segments into successive variables
+// Sscan scans a resource path, storing successive segments into successive variables
 // as determined by the provided pattern.
-func Sscan(name, pattern string, value reflect.Value) (err error) {
+func Sscan(path, pattern string, value reflect.Value) (err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("parse resource path '%s' with pattern '%s': %w", name, pattern, err)
+			err = fmt.Errorf("parse resource path '%s' with pattern '%s': %w", path, pattern, err)
 		}
 	}()
-	var nameScanner, patternScanner Scanner
+	var pathScanner, patternScanner Scanner
 	patternScanner.Init(pattern)
 	variables := make([]reflect.Value, 0)
 	for patternScanner.Scan() {
@@ -30,28 +30,28 @@ func Sscan(name, pattern string, value reflect.Value) (err error) {
 		}
 		variables = append(variables, v)
 	}
-	nameScanner.Init(name)
+	pathScanner.Init(path)
 	patternScanner.Init(pattern)
 	var i int
 	for patternScanner.Scan() {
 		if patternScanner.Full() {
 			return fmt.Errorf("invalid pattern")
 		}
-		if !nameScanner.Scan() {
+		if !pathScanner.Scan() {
 			return fmt.Errorf("segment %s: %w", patternScanner.Segment(), io.ErrUnexpectedEOF)
 		}
-		nameSegment, patternSegment := nameScanner.Segment(), patternScanner.Segment()
+		pathSegment, patternSegment := pathScanner.Segment(), patternScanner.Segment()
 		if !patternSegment.IsVariable() {
-			if patternSegment.Literal() != nameSegment.Literal() {
-				return fmt.Errorf("segment %s: got %s", patternSegment, nameSegment)
+			if patternSegment.Literal() != pathSegment.Literal() {
+				return fmt.Errorf("segment %s: got %s", patternSegment, pathSegment)
 			}
 			continue
 		}
-		variables[i].SetString(nameSegment.Literal().ResourceID())
+		variables[i].SetString(pathSegment.Literal().ResourceID())
 		i++
 	}
-	if nameScanner.Scan() {
-		return fmt.Errorf("got trailing segments in name")
+	if pathScanner.Scan() {
+		return fmt.Errorf("got trailing segments in path")
 	}
 	return nil
 }

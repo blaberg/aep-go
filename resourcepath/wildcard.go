@@ -1,4 +1,4 @@
 package resourcepath
 
-// Wildcard is the resource name wildcard character "-".
+// Wildcard is the resource path wildcard character "-".
 const Wildcard = "-"

@@ -1,16 +1,16 @@
 package resourcepath
 
-// Match reports whether the specified resource name matches the specified resource name pattern.
-func Match(pattern, name string) bool {
-	var nameScanner, patternScanner Scanner
-	nameScanner.Init(name)
+// Match reports whether the specified resource path matches the specified resource path pattern.
+func Match(pattern, path string) bool {
+	var pathScanner, patternScanner Scanner
+	pathScanner.Init(path)
 	patternScanner.Init(pattern)
 	for patternScanner.Scan() {
-		if !nameScanner.Scan() {
+		if !pathScanner.Scan() {
 			return false
 		}
-		nameSegment := nameScanner.Segment()
-		if nameSegment.IsVariable() {
+		pathSegment := pathScanner.Segment()
+		if pathSegment.IsVariable() {
 			return false
 		}
 		patternSegment := patternScanner.Segment()
@@ -18,18 +18,18 @@ func Match(pattern, name string) bool {
 			return false // edge case - wildcard not allowed in patterns
 		}
 		if patternSegment.IsVariable() {
-			if nameSegment == "" {
+			if pathSegment == "" {
 				return false
 			}
-		} else if nameSegment != patternSegment {
+		} else if pathSegment != patternSegment {
 			return false
 		}
 	}
 	switch {
 	case
-		nameScanner.Scan(),             // name has more segments than pattern, no match
+		pathScanner.Scan(),             // path has more segments than pattern, no match
 		patternScanner.Segment() == "", // edge case - empty pattern never matches
-		patternScanner.Full():          // edge case - full resource name not allowed in patterns
+		patternScanner.Full():          // edge case - full resource path not allowed in patterns
 		return false
 	}
 	return true

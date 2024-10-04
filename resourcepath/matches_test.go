@@ -10,88 +10,88 @@ import (
 func TestMatches(t *testing.T) {
 	t.Parallel()
 	for _, tt := range []struct {
-		test     string
 		name     string
+		path     string
 		pattern  string
 		expected bool
 	}{
 		{
-			test:     "valid pattern",
-			name:     "shippers/1/sites/1",
+			name:     "valid pattern",
+			path:     "shippers/1/sites/1",
 			pattern:  "shippers/{shipper}/sites/{site}",
 			expected: true,
 		},
 
 		{
-			test:     "name longer than pattern",
-			name:     "shippers/1/sites/1/settings",
+			name:     "path longer than pattern",
+			path:     "shippers/1/sites/1/settings",
 			pattern:  "shippers/{shipper}/sites/{site}",
 			expected: false,
 		},
 
 		{
-			test:     "empty pattern",
+			name:     "empty pattern",
 			pattern:  "",
-			name:     "shippers/1/sites/1",
+			path:     "shippers/1/sites/1",
 			expected: false,
 		},
 
 		{
-			test:     "empty pattern and empty name",
+			name:     "empty pattern and empty path",
 			pattern:  "",
-			name:     "",
+			path:     "",
 			expected: false,
 		},
 
 		{
-			test:     "singleton",
-			name:     "shippers/1/sites/1/settings",
+			name:     "singleton",
+			path:     "shippers/1/sites/1/settings",
 			pattern:  "shippers/{shipper}/sites/{site}/settings",
 			expected: true,
 		},
 
 		{
-			test:     "wildcard pattern",
-			name:     "shippers/1/sites/1",
+			name:     "wildcard pattern",
+			path:     "shippers/1/sites/1",
 			pattern:  "shippers/-/sites/-",
 			expected: false,
 		},
 
 		{
-			test:     "full parent",
-			name:     "//freight-example.einride.tech/shippers/1/sites/1",
+			name:     "full parent",
+			path:     "//freight-example.einride.tech/shippers/1/sites/1",
 			pattern:  "shippers/{shipper}/sites/{site}",
 			expected: true,
 		},
 
 		{
-			test:     "full pattern",
-			name:     "shippers/1",
+			name:     "full pattern",
+			path:     "shippers/1",
 			pattern:  "//freight-example.einride.tech/shippers/{shipper}",
 			expected: false,
 		},
 
 		{
-			test:     "slash prefix in the name",
-			name:     "/shippers/1",
+			name:     "slash prefix in the path",
+			path:     "/shippers/1",
 			pattern:  "shippers/{shipper}",
 			expected: true,
 		},
 
 		{
-			test:     "slash prefix in the pattern",
-			name:     "shippers/1",
+			name:     "slash prefix in the pattern",
+			path:     "shippers/1",
 			pattern:  "/shippers/{shipper}",
 			expected: true,
 		},
 	} {
 		tt := tt
-		t.Run(tt.test, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			assert.Check(
 				t,
-				Match(tt.pattern, tt.name) == tt.expected,
-				fmt.Sprintf("expected Match(%q, %q)=%t", tt.pattern, tt.name, tt.expected),
+				Match(tt.pattern, tt.path) == tt.expected,
+				fmt.Sprintf("expected Match(%q, %q)=%t", tt.pattern, tt.path, tt.expected),
 			)
 		})
 	}
