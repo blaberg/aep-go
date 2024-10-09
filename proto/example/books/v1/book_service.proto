@@ -3,7 +3,7 @@ syntax = "proto3";
 package example.books.v1;
 
 import "google/api/client.proto";
-import "example/v1/book.proto";
+import "example/books/v1/book.proto";
 import "google/api/field_behavior.proto";
 import "google/api/annotations.proto";
 import "google/api/resource.proto";
