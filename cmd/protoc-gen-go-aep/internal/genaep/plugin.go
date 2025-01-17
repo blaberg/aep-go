@@ -2,6 +2,7 @@ package genaep
 
 import (
 	"fmt"
+	"log/slog"
 
 	"google.golang.org/protobuf/compiler/protogen"
 )
@@ -19,7 +20,10 @@ func Run(gen *protogen.Plugin) error {
 		}
 		g := newGeneratedFile(gen, f)
 		g.Skip()
-		_ = generateResourcePath(gen, g, f)
+		err := generateResourcePath(gen, g, f)
+		if err != nil {
+			slog.Error(f.Desc.Path(), "error ", err)
+		}
 	}
 	return nil
 }
