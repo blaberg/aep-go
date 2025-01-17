@@ -19,7 +19,7 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			continue
 		}
 		if len(resource.Pattern) > 1 {
-			return fmt.Errorf("generator dows not support multipatterns yet")
+			return fmt.Errorf("generator does not support multipatterns yet")
 		}
 		g.Unskip()
 		resourcepathImport := protogen.GoImportPath("github.com/blaberg/aep-go/resourcepath")
