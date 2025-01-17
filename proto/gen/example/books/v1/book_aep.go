@@ -35,6 +35,7 @@ func (p *BookResourcePath) String() string {
 		"/",
 	)
 }
+
 func (p *BookResourcePath) GetBook() string {
 	return p.path.Get("book")
 }

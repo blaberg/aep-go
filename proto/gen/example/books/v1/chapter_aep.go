@@ -37,9 +37,11 @@ func (p *ChapterResourcePath) String() string {
 		"/",
 	)
 }
+
 func (p *ChapterResourcePath) GetBook() string {
 	return p.path.Get("book")
 }
+
 func (p *ChapterResourcePath) GetChapter() string {
 	return p.path.Get("chapter")
 }

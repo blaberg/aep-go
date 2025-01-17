@@ -27,8 +27,6 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			return fmt.Errorf("generator does not support multipatterns yet")
 		}
 		g.Unskip()
-		g.Import(resourcepathImport)
-		g.Import(stringsPackage)
 		g.P("")
 		g.P("type ", m.GoIdent.GoName, "ResourcePath struct{")
 		g.P("  path *", resourcepathImport.Ident("ResourcePath"))
@@ -70,6 +68,7 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			g.P("func(p *", m.GoIdent.GoName, "ResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
 			g.P("  return p.path.Get(\"", literal, "\")")
 			g.P("}")
+			g.P("")
 		}
 
 	}
