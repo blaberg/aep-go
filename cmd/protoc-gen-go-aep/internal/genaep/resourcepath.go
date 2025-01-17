@@ -10,6 +10,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	stringsPackage     = protogen.GoImportPath("strings")
+	resourcepathImport = protogen.GoImportPath("github.com/blaberg/aep-go/resourcepath")
+)
+
 func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *protogen.File) error {
 	for _, m := range file.Messages {
 		resource := proto.GetExtension(
@@ -22,8 +27,8 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			return fmt.Errorf("generator does not support multipatterns yet")
 		}
 		g.Unskip()
-		resourcepathImport := protogen.GoImportPath("github.com/blaberg/aep-go/resourcepath")
 		g.Import(resourcepathImport)
+		g.Import(stringsPackage)
 		g.P("")
 		g.P("type ", m.GoIdent.GoName, "ResourcePath struct{")
 		g.P("  path *", resourcepathImport.Ident("ResourcePath"))
@@ -38,7 +43,24 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 		g.P("    path: path,")
 		g.P("  }, nil")
 		g.P("}")
+		g.P("")
+		g.P("func(p *", m.GoIdent.GoName, "ResourcePath) String() string {")
+		g.P("  return ", stringsPackage.Ident("Join"), "(")
+		g.P("    []string{")
 		var scanner resourcepath.Scanner
+		scanner.Init(resource.GetPattern()[0])
+		for scanner.Scan() {
+			if !scanner.Segment().IsVariable() {
+				g.P("      \"", scanner.Segment().Literal().ResourceID(), "\",")
+				continue
+			}
+			g.P("      p.path.Get(\"", scanner.Segment().Literal(), "\"),")
+		}
+		g.P("    },")
+		g.P("    \"/\",")
+		g.P("  )")
+		g.P("}")
+		g.P("")
 		scanner.Init(resource.GetPattern()[0])
 		for scanner.Scan() {
 			if !scanner.Segment().IsVariable() {

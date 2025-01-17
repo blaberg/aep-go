@@ -9,6 +9,7 @@ package booksv1
 
 import (
 	resourcepath "github.com/blaberg/aep-go/resourcepath"
+	strings "strings"
 )
 
 type ChapterResourcePath struct {
@@ -23,6 +24,18 @@ func ParseChapterResourcePath(p string) (*ChapterResourcePath, error) {
 	return &ChapterResourcePath{
 		path: path,
 	}, nil
+}
+
+func (p *ChapterResourcePath) String() string {
+	return strings.Join(
+		[]string{
+			"books",
+			p.path.Get("book"),
+			"chapters",
+			p.path.Get("chapter"),
+		},
+		"/",
+	)
 }
 func (p *ChapterResourcePath) GetBook() string {
 	return p.path.Get("book")
