@@ -19,6 +19,12 @@ func (p ResourcePath) Get(segment string) string {
 	return p.segments[segment]
 }
 
+func NewResourcePath(segments map[string]string) *ResourcePath {
+	return &ResourcePath{
+		segments: segments,
+	}
+}
+
 func ParseString(path, pattern string) (*ResourcePath, error) {
 	if pattern == "" {
 		return nil, fmt.Errorf("pattern can't be empty")

@@ -70,7 +70,38 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			g.P("}")
 			g.P("")
 		}
-
+		if err := generateNewResourcePathMethod(g, m, resource.GetPattern()[0]); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func generateNewResourcePathMethod(g *protogen.GeneratedFile, m *protogen.Message, pattern string) error {
+	var scanner resourcepath.Scanner
+	scanner.Init(pattern)
+	g.P("")
+	g.P("func New", m.GoIdent.GoName, "Path(")
+	for scanner.Scan() {
+		if !scanner.Segment().IsVariable() {
+			continue
+		}
+		g.P("  ", scanner.Segment().Literal().ResourceID(), " string,")
+	}
+	g.P("  ) *", m.GoIdent.GoName, "ResourcePath {")
+	g.P("    segments := map[string]string{")
+	scanner.Init(pattern)
+	for scanner.Scan() {
+		if !scanner.Segment().IsVariable() {
+			continue
+		}
+		id := scanner.Segment().Literal().ResourceID()
+		g.P("    \"", id, "\": ", id, ",")
+	}
+	g.P("    }")
+	g.P("  return &", m.GoIdent.GoName, "ResourcePath{")
+	g.P("    path: ", resourcepathImport.Ident("NewResourcePath"), "(segments),")
+	g.P("  }")
+	g.P("}")
 	return nil
 }
