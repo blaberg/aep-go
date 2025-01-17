@@ -26,6 +26,19 @@ func ParseChapterResourcePath(p string) (*ChapterResourcePath, error) {
 	}, nil
 }
 
+func NewChapterPath(
+	book string,
+	chapter string,
+) *ChapterResourcePath {
+	segments := map[string]string{
+		"book":    book,
+		"chapter": chapter,
+	}
+	return &ChapterResourcePath{
+		path: resourcepath.NewResourcePath(segments),
+	}
+}
+
 func (p *ChapterResourcePath) String() string {
 	return strings.Join(
 		[]string{
@@ -41,19 +54,7 @@ func (p *ChapterResourcePath) String() string {
 func (p *ChapterResourcePath) GetBook() string {
 	return p.path.Get("book")
 }
+
 func (p *ChapterResourcePath) GetChapter() string {
 	return p.path.Get("chapter")
-}
-
-func NewChapterPath(
-	book string,
-	chapter string,
-) *ChapterResourcePath {
-	segments := map[string]string{
-		"book":    book,
-		"chapter": chapter,
-	}
-	return &ChapterResourcePath{
-		path: resourcepath.NewResourcePath(segments),
-	}
 }

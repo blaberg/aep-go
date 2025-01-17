@@ -26,6 +26,17 @@ func ParseBookResourcePath(p string) (*BookResourcePath, error) {
 	}, nil
 }
 
+func NewBookPath(
+	book string,
+) *BookResourcePath {
+	segments := map[string]string{
+		"book": book,
+	}
+	return &BookResourcePath{
+		path: resourcepath.NewResourcePath(segments),
+	}
+}
+
 func (p *BookResourcePath) String() string {
 	return strings.Join(
 		[]string{
@@ -38,15 +49,4 @@ func (p *BookResourcePath) String() string {
 
 func (p *BookResourcePath) GetBook() string {
 	return p.path.Get("book")
-}
-
-func NewBookPath(
-	book string,
-) *BookResourcePath {
-	segments := map[string]string{
-		"book": book,
-	}
-	return &BookResourcePath{
-		path: resourcepath.NewResourcePath(segments),
-	}
 }

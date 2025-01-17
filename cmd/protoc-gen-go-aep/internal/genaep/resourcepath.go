@@ -32,55 +32,60 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 		g.P("  path *", resourcepathImport.Ident("ResourcePath"))
 		g.P("}")
 		g.P("")
-		g.P("func Parse", m.GoIdent.GoName, "ResourcePath(p string) (*", m.GoIdent.GoName, "ResourcePath, error) {")
-		g.P("  path, err := ", resourcepathImport.Ident("ParseString"), "(p, \"", resource.GetPattern()[0], "\")")
-		g.P("  if err != nil {")
-		g.P("    return nil, err")
-		g.P("  }")
-		g.P("  return &", m.GoIdent.GoName, "ResourcePath{")
-		g.P("    path: path,")
-		g.P("  }, nil")
-		g.P("}")
-		g.P("")
-		g.P("func(p *", m.GoIdent.GoName, "ResourcePath) String() string {")
-		g.P("  return ", stringsPackage.Ident("Join"), "(")
-		g.P("    []string{")
-		var scanner resourcepath.Scanner
-		scanner.Init(resource.GetPattern()[0])
-		for scanner.Scan() {
-			if !scanner.Segment().IsVariable() {
-				g.P("      \"", scanner.Segment().Literal().ResourceID(), "\",")
-				continue
-			}
-			g.P("      p.path.Get(\"", scanner.Segment().Literal(), "\"),")
-		}
-		g.P("    },")
-		g.P("    \"/\",")
-		g.P("  )")
-		g.P("}")
-		g.P("")
-		scanner.Init(resource.GetPattern()[0])
-		for scanner.Scan() {
-			if !scanner.Segment().IsVariable() {
-				continue
-			}
-			literal := scanner.Segment().Literal().ResourceID()
-			g.P("func(p *", m.GoIdent.GoName, "ResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
-			g.P("  return p.path.Get(\"", literal, "\")")
-			g.P("}")
-			g.P("")
+		if err := generateParseStringMethod(g, m, resource.GetPattern()[0]); err != nil {
+			return err
 		}
 		if err := generateNewResourcePathMethod(g, m, resource.GetPattern()[0]); err != nil {
+			return err
+		}
+		if err := generateStringMethod(g, m, resource.GetPattern()[0]); err != nil {
+			return err
+		}
+		if err := generateGetterMethods(g, m, resource.GetPattern()[0]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+func generateParseStringMethod(g *protogen.GeneratedFile, m *protogen.Message, pattern string) error {
+	g.P("func Parse", m.GoIdent.GoName, "ResourcePath(p string) (*", m.GoIdent.GoName, "ResourcePath, error) {")
+	g.P("  path, err := ", resourcepathImport.Ident("ParseString"), "(p, \"", pattern, "\")")
+	g.P("  if err != nil {")
+	g.P("    return nil, err")
+	g.P("  }")
+	g.P("  return &", m.GoIdent.GoName, "ResourcePath{")
+	g.P("    path: path,")
+	g.P("  }, nil")
+	g.P("}")
+	g.P("")
+	return nil
+}
+
+func generateStringMethod(g *protogen.GeneratedFile, m *protogen.Message, pattern string) error {
+	g.P("func(p *", m.GoIdent.GoName, "ResourcePath) String() string {")
+	g.P("  return ", stringsPackage.Ident("Join"), "(")
+	g.P("    []string{")
+	var scanner resourcepath.Scanner
+	scanner.Init(pattern)
+	for scanner.Scan() {
+		if !scanner.Segment().IsVariable() {
+			g.P("      \"", scanner.Segment().Literal().ResourceID(), "\",")
+			continue
+		}
+		g.P("      p.path.Get(\"", scanner.Segment().Literal(), "\"),")
+	}
+	g.P("    },")
+	g.P("    \"/\",")
+	g.P("  )")
+	g.P("}")
+	g.P("")
+	return nil
+}
+
 func generateNewResourcePathMethod(g *protogen.GeneratedFile, m *protogen.Message, pattern string) error {
 	var scanner resourcepath.Scanner
 	scanner.Init(pattern)
-	g.P("")
 	g.P("func New", m.GoIdent.GoName, "Path(")
 	for scanner.Scan() {
 		if !scanner.Segment().IsVariable() {
@@ -103,5 +108,22 @@ func generateNewResourcePathMethod(g *protogen.GeneratedFile, m *protogen.Messag
 	g.P("    path: ", resourcepathImport.Ident("NewResourcePath"), "(segments),")
 	g.P("  }")
 	g.P("}")
+	g.P("")
+	return nil
+}
+
+func generateGetterMethods(g *protogen.GeneratedFile, m *protogen.Message, pattern string) error {
+	var scanner resourcepath.Scanner
+	scanner.Init(pattern)
+	for scanner.Scan() {
+		if !scanner.Segment().IsVariable() {
+			continue
+		}
+		literal := scanner.Segment().Literal().ResourceID()
+		g.P("func(p *", m.GoIdent.GoName, "ResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
+		g.P("  return p.path.Get(\"", literal, "\")")
+		g.P("}")
+		g.P("")
+	}
 	return nil
 }
