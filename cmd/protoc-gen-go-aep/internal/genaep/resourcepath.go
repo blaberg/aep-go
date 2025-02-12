@@ -66,9 +66,9 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			g.P("}")
 			g.P("")
 			g.P("func ParseMultipattern(p string) (isMultipattern, error) {")
-			g.P("    switch(p){")
+			g.P("    switch {")
 			for _, gen := range generators {
-				g.P("        case \"", gen.Pattern, "\":")
+				g.P("        case ", resourcepathImport.Ident("Matches"), "(\"", gen.Pattern, "\", p):")
 				g.P("                 return Parse", gen.Name, "ResourcePath(p)")
 			}
 			g.P("    }")

@@ -108,10 +108,10 @@ type isMultipattern interface {
 }
 
 func ParseMultipattern(p string) (isMultipattern, error) {
-	switch p {
-	case "authors/{author}/books/{book}":
+	switch {
+	case resourcepath.Matches("authors/{author}/books/{book}", p):
 		return ParseAuthorBookResourcePath(p)
-	case "books/{book}":
+	case resourcepath.Matches("books/{book}", p):
 		return ParseBookResourcePath(p)
 	}
 	return nil, fmt.Errorf("failed to match pattern")
