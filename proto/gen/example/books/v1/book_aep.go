@@ -116,3 +116,32 @@ func ParseMultipattern(p string) (isMultipattern, error) {
 	}
 	return nil, fmt.Errorf("failed to match pattern")
 }
+
+type MultipatternResourcePath struct {
+	path *resourcepath.ResourcePath
+}
+
+func ParseMultipatternResourcePath(p string) (*MultipatternResourcePath, error) {
+	var path *resourcepath.ResourcePath
+	var err error
+	switch {
+	case resourcepath.Matches("authors/{author}/books/{book}", p):
+		path, err = resourcepath.ParseString("authors/{author}/books/{book}", p)
+	case resourcepath.Matches("books/{book}", p):
+		path, err = resourcepath.ParseString("books/{book}", p)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &MultipatternResourcePath{
+		path: path,
+	}, nil
+}
+
+func (p *MultipatternResourcePath) GetAuthor() string {
+	return p.path.Get("author")
+}
+
+func (p *MultipatternResourcePath) GetBook() string {
+	return p.path.Get("book")
+}
