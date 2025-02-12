@@ -10,4 +10,7 @@ require (
 	gotest.tools/v3 v3.5.1
 )
 
-require github.com/google/uuid v1.6.0
+require (
+	github.com/google/uuid v1.6.0
+	golang.org/x/text v0.17.0
+)

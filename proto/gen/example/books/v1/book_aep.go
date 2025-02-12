@@ -8,9 +8,59 @@
 package booksv1
 
 import (
+	fmt "fmt"
 	resourcepath "github.com/blaberg/aep-go/resourcepath"
 	strings "strings"
 )
+
+type AuthorBookResourcePath struct {
+	path *resourcepath.ResourcePath
+}
+
+func ParseAuthorBookResourcePath(p string) (*AuthorBookResourcePath, error) {
+	path, err := resourcepath.ParseString(p, "authors/{author}/books/{book}")
+	if err != nil {
+		return nil, err
+	}
+	return &AuthorBookResourcePath{
+		path: path,
+	}, nil
+}
+
+func NewAuthorBookPath(
+	author string,
+	book string,
+) *AuthorBookResourcePath {
+	segments := map[string]string{
+		"author": author,
+		"book":   book,
+	}
+	return &AuthorBookResourcePath{
+		path: resourcepath.NewResourcePath(segments),
+	}
+}
+
+func (p *AuthorBookResourcePath) String() string {
+	return strings.Join(
+		[]string{
+			"authors",
+			p.path.Get("author"),
+			"books",
+			p.path.Get("book"),
+		},
+		"/",
+	)
+}
+
+func (p *AuthorBookResourcePath) GetAuthor() string {
+	return p.path.Get("author")
+}
+
+func (p *AuthorBookResourcePath) GetBook() string {
+	return p.path.Get("book")
+}
+
+func (*AuthorBookResourcePath) isMultipattern() {}
 
 type BookResourcePath struct {
 	path *resourcepath.ResourcePath
@@ -49,4 +99,20 @@ func (p *BookResourcePath) String() string {
 
 func (p *BookResourcePath) GetBook() string {
 	return p.path.Get("book")
+}
+
+func (*BookResourcePath) isMultipattern() {}
+
+type isMultipattern interface {
+	isMultipattern()
+}
+
+func ParseMultipattern(p string) (isMultipattern, error) {
+	switch p {
+	case "authors/{author}/books/{book}":
+		return ParseAuthorBookResourcePath(p)
+	case "books/{book}":
+		return ParseBookResourcePath(p)
+	}
+	return nil, fmt.Errorf("failed to match pattern")
 }
