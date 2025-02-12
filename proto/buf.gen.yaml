@@ -11,7 +11,7 @@ plugins:
   - remote: buf.build/protocolbuffers/go
     out: gen
     opt: paths=source_relative
-  - local: protoc-gen-go-aep
+  - local: ["go", "run", "github.com/blaberg/aep-go/cmd/protoc-gen-go-aep"]
     out: gen
     opt: paths=source_relative
 inputs:
