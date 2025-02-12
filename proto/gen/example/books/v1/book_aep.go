@@ -60,8 +60,6 @@ func (p *AuthorBookResourcePath) GetBook() string {
 	return p.path.Get("book")
 }
 
-func (*AuthorBookResourcePath) isMultipattern() {}
-
 type BookResourcePath struct {
 	path *resourcepath.ResourcePath
 }
@@ -101,11 +99,13 @@ func (p *BookResourcePath) GetBook() string {
 	return p.path.Get("book")
 }
 
-func (*BookResourcePath) isMultipattern() {}
-
 type isMultipattern interface {
 	isMultipattern()
 }
+
+func (*AuthorBookResourcePath) isMultipattern() {}
+
+func (*BookResourcePath) isMultipattern() {}
 
 func ParseMultipattern(p string) (isMultipattern, error) {
 	switch {

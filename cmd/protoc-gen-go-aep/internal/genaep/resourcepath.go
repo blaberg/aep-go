@@ -55,69 +55,10 @@ func generateResourcePath(_ *protogen.Plugin, g *protogen.GeneratedFile, file *p
 			if err := pg.generateGetterMethods(g); err != nil {
 				return err
 			}
-			g.P("")
-			g.P("func (*", pg.Name, "ResourcePath) isMultipattern() {}")
-			g.P("")
 		}
 		if hasMultipattern {
-			g.P("")
-			g.P("type isMultipattern interface {")
-			g.P("isMultipattern()")
-			g.P("}")
-			g.P("")
-			g.P("func ParseMultipattern(p string) (isMultipattern, error) {")
-			g.P("switch {")
-			for _, gen := range generators {
-				g.P("case ", resourcepathImport.Ident("Matches"), "(\"", gen.Pattern, "\", p):")
-				g.P("return Parse", gen.Name, "ResourcePath(p)")
-			}
-			g.P("}")
-			g.P("return nil, ", fmtPackage.Ident("Errorf"), "(\"failed to match pattern\")")
-			g.P("}")
-		}
-		if hasMultipattern {
-			g.P("")
-			g.P("type MultipatternResourcePath struct{")
-			g.P("path *", resourcepathImport.Ident("ResourcePath"))
-			g.P("}")
-			g.P("")
-			g.P("func ParseMultipatternResourcePath(p string) (*MultipatternResourcePath, error) {")
-			g.P("var path *", resourcepathImport.Ident("ResourcePath"))
-			g.P("var err error")
-			g.P("switch {")
-			for _, gen := range generators {
-				g.P("case ", resourcepathImport.Ident("Matches"), "(\"", gen.Pattern, "\", p):")
-				g.P("path, err = ", resourcepathImport.Ident("ParseString"), "(\"", gen.Pattern, "\", p)")
-			}
-			g.P("}")
-			g.P("if err != nil {")
-			g.P("return nil, err")
-			g.P("}")
-			g.P("return &MultipatternResourcePath{")
-			g.P("path: path,")
-			g.P("}, nil")
-			g.P("}")
-			g.P("")
-			var scanner resourcepath.Scanner
-			literals := make(map[string]any)
-			for _, gen := range generators {
-				scanner.Init(gen.Pattern)
-				for scanner.Scan() {
-					if !scanner.Segment().IsVariable() {
-						continue
-					}
-					literal := scanner.Segment().Literal().ResourceID()
-					if _, ok := literals[literal]; ok {
-						continue
-					}
-					literals[literal] = struct{}{}
-					g.P("func(p *MultipatternResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
-					g.P("return p.path.Get(\"", literal, "\")")
-					g.P("}")
-					g.P("")
-				}
-			}
-
+			generateMultipatterInterfaces(g, generators)
+			generateMultipatternResourcePath(g, generators)
 		}
 	}
 	return nil
@@ -224,4 +165,69 @@ func (p PathGenerator) generateGetterMethods(g *protogen.GeneratedFile) error {
 		g.P("")
 	}
 	return nil
+}
+
+func generateMultipatterInterfaces(g *protogen.GeneratedFile, generators []PathGenerator) {
+	g.P("type isMultipattern interface {")
+	g.P("isMultipattern()")
+	g.P("}")
+	for _, p := range generators {
+		g.P("")
+		g.P("func (*", p.Name, "ResourcePath) isMultipattern() {}")
+		g.P("")
+	}
+	g.P("func ParseMultipattern(p string) (isMultipattern, error) {")
+	g.P("switch {")
+	for _, gen := range generators {
+		g.P("case ", resourcepathImport.Ident("Matches"), "(\"", gen.Pattern, "\", p):")
+		g.P("return Parse", gen.Name, "ResourcePath(p)")
+	}
+	g.P("}")
+	g.P("return nil, ", fmtPackage.Ident("Errorf"), "(\"failed to match pattern\")")
+	g.P("}")
+	g.P("")
+}
+
+func generateMultipatternResourcePath(g *protogen.GeneratedFile, generators []PathGenerator) {
+	g.P("")
+	g.P("type MultipatternResourcePath struct{")
+	g.P("path *", resourcepathImport.Ident("ResourcePath"))
+	g.P("}")
+	g.P("")
+	g.P("func ParseMultipatternResourcePath(p string) (*MultipatternResourcePath, error) {")
+	g.P("var path *", resourcepathImport.Ident("ResourcePath"))
+	g.P("var err error")
+	g.P("switch {")
+	for _, gen := range generators {
+		g.P("case ", resourcepathImport.Ident("Matches"), "(\"", gen.Pattern, "\", p):")
+		g.P("path, err = ", resourcepathImport.Ident("ParseString"), "(\"", gen.Pattern, "\", p)")
+	}
+	g.P("}")
+	g.P("if err != nil {")
+	g.P("return nil, err")
+	g.P("}")
+	g.P("return &MultipatternResourcePath{")
+	g.P("path: path,")
+	g.P("}, nil")
+	g.P("}")
+	g.P("")
+	var scanner resourcepath.Scanner
+	literals := make(map[string]any)
+	for _, gen := range generators {
+		scanner.Init(gen.Pattern)
+		for scanner.Scan() {
+			if !scanner.Segment().IsVariable() {
+				continue
+			}
+			literal := scanner.Segment().Literal().ResourceID()
+			if _, ok := literals[literal]; ok {
+				continue
+			}
+			literals[literal] = struct{}{}
+			g.P("func(p *MultipatternResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
+			g.P("return p.path.Get(\"", literal, "\")")
+			g.P("}")
+			g.P("")
+		}
+	}
 }

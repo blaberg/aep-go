@@ -58,5 +58,3 @@ func (p *ChapterResourcePath) GetBook() string {
 func (p *ChapterResourcePath) GetChapter() string {
 	return p.path.Get("chapter")
 }
-
-func (*ChapterResourcePath) isMultipattern() {}
