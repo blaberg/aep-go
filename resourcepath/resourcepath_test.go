@@ -27,7 +27,7 @@ func Test_ResourcePath(t *testing.T) {
 			path:    "organizations/test-org",
 			pattern: orgPattern,
 			resp: &ResourcePath{
-				segments: map[string]string{
+				elements: map[string]string{
 					"organization": "test-org",
 				},
 			},
@@ -37,7 +37,7 @@ func Test_ResourcePath(t *testing.T) {
 			path:    "organizations/test-org/users/test-user",
 			pattern: userPattern,
 			resp: &ResourcePath{
-				segments: map[string]string{
+				elements: map[string]string{
 					"user":         "test-user",
 					"organization": "test-org",
 				},
@@ -48,7 +48,7 @@ func Test_ResourcePath(t *testing.T) {
 			path:    "organizations/test-org/logs",
 			pattern: singleton,
 			resp: &ResourcePath{
-				segments: map[string]string{
+				elements: map[string]string{
 					"organization": "test-org",
 				},
 			},
@@ -57,7 +57,7 @@ func Test_ResourcePath(t *testing.T) {
 			name:    "invalida pattern",
 			pattern: userPattern,
 			path:    "organizations/test-org",
-			err:     "segment users: unexpected EOF",
+			err:     "element users: unexpected EOF",
 		},
 		{
 			name: "empty pattern",
@@ -67,7 +67,7 @@ func Test_ResourcePath(t *testing.T) {
 		{
 			name:    "empty path",
 			pattern: userPattern,
-			err:     "segment organizations: unexpected EOF",
+			err:     "path can't be empty",
 		},
 		{
 			name: "empty pattern",

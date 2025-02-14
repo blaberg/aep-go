@@ -13,16 +13,16 @@ import (
 // generellt tror jag vi kan göra paketet mycket simplare
 
 type ResourcePath struct {
-	segments map[string]string
+	elements map[string]string
 }
 
-func (p ResourcePath) Get(segment string) string {
-	return p.segments[segment]
+func (p ResourcePath) Get(element string) string {
+	return p.elements[element]
 }
 
-func NewResourcePath(segments map[string]string) *ResourcePath {
+func NewResourcePath(elements map[string]string) *ResourcePath {
 	return &ResourcePath{
-		segments: segments,
+		elements: elements,
 	}
 }
 
@@ -44,16 +44,16 @@ func ParseString(path, pattern string) (*ResourcePath, error) {
 		}
 		if !pattrElem.IsVariable() {
 			if pattrElem.GetLiteral() != pathElem.GetLiteral() {
-				return nil, fmt.Errorf("segment %s: got %s", pattrElem, pathElem)
+				return nil, fmt.Errorf("element %s: got %s", pattrElem, pathElem)
 			}
 			continue
 		}
 		elements[string(pattrElem.GetLiteral())] = string(pathElem.GetLiteral())
 	}
 	if _, ok := next(); ok {
-		return nil, fmt.Errorf("got trailing segments in path")
+		return nil, fmt.Errorf("got trailing elements in path")
 	}
 	return &ResourcePath{
-		segments: elements,
+		elements: elements,
 	}, nil
 }
