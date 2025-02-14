@@ -2,7 +2,7 @@ package pagination
 
 import (
 	"encoding/json"
-	"hash/crc32"
+	"hash/fnv"
 	"reflect"
 )
 
@@ -26,5 +26,7 @@ func calculateRequestChecksum(request Request) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	return crc32.ChecksumIEEE(data), nil
+	h := fnv.New32a()
+	h.Write(data)
+	return h.Sum32(), nil
 }
