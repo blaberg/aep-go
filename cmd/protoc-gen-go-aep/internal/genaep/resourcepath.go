@@ -70,16 +70,14 @@ type PathGenerator struct {
 }
 
 func newPatternGenerator(pattern string) PathGenerator {
-	var scanner resourcepath.Scanner
-	scanner.Init(pattern)
 	var name string
-	for scanner.Scan() {
-		if !scanner.Segment().IsVariable() {
+	for e := range resourcepath.Elements(pattern) {
+		if !e.IsVariable() {
 			continue
 		}
-		literal := scanner.Segment().Literal().ResourceID()
+		literal := e.GetLiteral()
 		c := cases.Title(language.English)
-		name = fmt.Sprintf("%s%s", name, c.String(literal))
+		name = fmt.Sprintf("%s%s", name, c.String(string(literal)))
 	}
 	return PathGenerator{
 		Pattern: pattern,
@@ -105,14 +103,12 @@ func (p PathGenerator) generateStringMethod(g *protogen.GeneratedFile) error {
 	g.P("func(p *", p.Name, "ResourcePath) String() string {")
 	g.P("return ", stringsPackage.Ident("Join"), "(")
 	g.P("[]string{")
-	var scanner resourcepath.Scanner
-	scanner.Init(p.Pattern)
-	for scanner.Scan() {
-		if !scanner.Segment().IsVariable() {
-			g.P("\"", scanner.Segment().Literal().ResourceID(), "\",")
+	for e := range resourcepath.Elements(p.Pattern) {
+		if !e.IsVariable() {
+			g.P("\"", e.GetLiteral(), "\",")
 			continue
 		}
-		g.P("p.path.Get(\"", scanner.Segment().Literal(), "\"),")
+		g.P("p.path.Get(\"", e.GetLiteral(), "\"),")
 	}
 	g.P("},")
 	g.P("\"/\",")
@@ -123,23 +119,21 @@ func (p PathGenerator) generateStringMethod(g *protogen.GeneratedFile) error {
 }
 
 func (p PathGenerator) generateNewResourcePathMethod(g *protogen.GeneratedFile) error {
-	var scanner resourcepath.Scanner
-	scanner.Init(p.Pattern)
+
 	g.P("func New", p.Name, "Path(")
-	for scanner.Scan() {
-		if !scanner.Segment().IsVariable() {
+	for e := range resourcepath.Elements(p.Pattern) {
+		if !e.IsVariable() {
 			continue
 		}
-		g.P(scanner.Segment().Literal().ResourceID(), " string,")
+		g.P(e.GetLiteral(), " string,")
 	}
 	g.P(") *", p.Name, "ResourcePath {")
 	g.P("segments := map[string]string{")
-	scanner.Init(p.Pattern)
-	for scanner.Scan() {
-		if !scanner.Segment().IsVariable() {
+	for e := range resourcepath.Elements(p.Pattern) {
+		if !e.IsVariable() {
 			continue
 		}
-		id := scanner.Segment().Literal().ResourceID()
+		id := e.GetLiteral()
 		g.P("\"", id, "\": ", id, ",")
 	}
 	g.P("}")
@@ -152,14 +146,12 @@ func (p PathGenerator) generateNewResourcePathMethod(g *protogen.GeneratedFile) 
 }
 
 func (p PathGenerator) generateGetterMethods(g *protogen.GeneratedFile) error {
-	var scanner resourcepath.Scanner
-	scanner.Init(p.Pattern)
-	for scanner.Scan() {
-		if !scanner.Segment().IsVariable() {
+	for e := range resourcepath.Elements(p.Pattern) {
+		if !e.IsVariable() {
 			continue
 		}
-		literal := scanner.Segment().Literal().ResourceID()
-		g.P("func(p *", p.Name, "ResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
+		literal := e.GetLiteral()
+		g.P("func(p *", p.Name, "ResourcePath) Get", strings.ToUpper(string(literal)[:1])+string(literal)[1:], "() string {")
 		g.P("return p.path.Get(\"", literal, "\")")
 		g.P("}")
 		g.P("")
@@ -211,20 +203,18 @@ func generateMultipatternResourcePath(g *protogen.GeneratedFile, generators []Pa
 	g.P("}, nil")
 	g.P("}")
 	g.P("")
-	var scanner resourcepath.Scanner
 	literals := make(map[string]any)
 	for _, gen := range generators {
-		scanner.Init(gen.Pattern)
-		for scanner.Scan() {
-			if !scanner.Segment().IsVariable() {
+		for e := range resourcepath.Elements(gen.Pattern) {
+			if !e.IsVariable() {
 				continue
 			}
-			literal := scanner.Segment().Literal().ResourceID()
-			if _, ok := literals[literal]; ok {
+			literal := e.GetLiteral()
+			if _, ok := literals[string(literal)]; ok {
 				continue
 			}
-			literals[literal] = struct{}{}
-			g.P("func(p *MultipatternResourcePath) Get", strings.ToUpper(literal[:1])+literal[1:], "() string {")
+			literals[string(literal)] = struct{}{}
+			g.P("func(p *MultipatternResourcePath) Get", strings.ToUpper(string(literal)[:1])+string(literal)[1:], "() string {")
 			g.P("return p.path.Get(\"", literal, "\")")
 			g.P("}")
 			g.P("")

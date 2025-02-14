@@ -3,6 +3,7 @@ package resourcepath
 import (
 	"fmt"
 	"io"
+	"iter"
 )
 
 // todo: det slutgiliga målet är att vi vill kunna generara rsurrser som använder den här funktionen.
@@ -29,33 +30,30 @@ func ParseString(path, pattern string) (*ResourcePath, error) {
 	if pattern == "" {
 		return nil, fmt.Errorf("pattern can't be empty")
 	}
-	segments := make(map[string]string)
-	var pathScanner, patternScanner Scanner
-	patternScanner.Init(pattern)
-	pathScanner.Init(path)
-	for patternScanner.Scan() {
-		if patternScanner.Full() {
-			return nil, fmt.Errorf("invalid pattern")
+	elements := make(map[string]string)
+	if path == "" {
+		return nil, fmt.Errorf("path can't be empty")
+	}
+	pathItr, patternItr := Elements(path), Elements(pattern)
+	next, stop := iter.Pull(pathItr)
+	defer stop()
+	for pattrElem := range patternItr {
+		pathElem, ok := next()
+		if !ok {
+			return nil, fmt.Errorf("element %s: %w", pattrElem, io.ErrUnexpectedEOF)
 		}
-		if !pathScanner.Scan() {
-			return nil, fmt.Errorf("segment %s: %w", patternScanner.Segment(), io.ErrUnexpectedEOF)
-		}
-		pathSegment, patternSegment := pathScanner.Segment(), patternScanner.Segment()
-		if !patternSegment.IsVariable() {
-			if patternSegment.Literal() != pathSegment.Literal() {
-				return nil, fmt.Errorf("segment %s: got %s", patternSegment, pathSegment)
-			}
-			if patternSegment.Literal() == Wildcard {
-				return nil, fmt.Errorf("the pattern can't contain wildcards")
+		if !pattrElem.IsVariable() {
+			if pattrElem.GetLiteral() != pathElem.GetLiteral() {
+				return nil, fmt.Errorf("segment %s: got %s", pattrElem, pathElem)
 			}
 			continue
 		}
-		segments[patternSegment.Literal().ResourceID()] = pathSegment.Literal().ResourceID()
+		elements[string(pattrElem.GetLiteral())] = string(pathElem.GetLiteral())
 	}
-	if pathScanner.Scan() {
+	if _, ok := next(); ok {
 		return nil, fmt.Errorf("got trailing segments in path")
 	}
 	return &ResourcePath{
-		segments: segments,
+		segments: elements,
 	}, nil
 }
