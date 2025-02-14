@@ -2,7 +2,7 @@ package pagination
 
 type Paginator struct {
 	maxPageSize int
-	checksum    uint32
+	signingKey  uint32
 }
 
 type Option func(*Paginator)
@@ -10,7 +10,7 @@ type Option func(*Paginator)
 func NewPaginator(options ...Option) *Paginator {
 	p := &Paginator{
 		maxPageSize: 100,
-		checksum:    0x9acb0442,
+		signingKey:  0xefbfde39,
 	}
 	for _, opt := range options {
 		opt(p)
@@ -24,8 +24,8 @@ func WithCustomMaxPageSize(maxPageSize int) Option {
 	}
 }
 
-func WithCustomChecksum(checksum uint32) Option {
+func WithCustomSigningKey(key uint32) Option {
 	return func(p *Paginator) {
-		p.checksum = checksum
+		p.signingKey = key
 	}
 }

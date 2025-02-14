@@ -38,7 +38,7 @@ func (p *Paginator) ParsePageToken(request Request) (PageToken, error) {
 	if err != nil {
 		return PageToken{}, err
 	}
-	checksum ^= p.checksum
+	checksum ^= p.signingKey
 	if request.GetPageToken() == "" {
 		return PageToken{
 			Offset:   0,
