@@ -2,15 +2,12 @@ package pagination
 
 import (
 	"encoding/base64"
-	"encoding/gob"
-	"errors"
+	"encoding/binary"
 	"fmt"
-	"io"
-	"strings"
 )
 
 type PageToken struct {
-	Offset   int32
+	Offset   int64
 	Checksum uint32
 }
 
@@ -20,17 +17,16 @@ func (p *PageToken) Next(hasMore bool, pageSize int32) *PageToken {
 	}
 	return &PageToken{
 		Checksum: p.Checksum,
-		Offset:   p.Offset + pageSize,
+		Offset:   p.Offset + int64(pageSize),
 	}
 }
 
 func (p *PageToken) String() string {
-	var b strings.Builder
-	base64Encoder := base64.NewEncoder(base64.URLEncoding, &b)
-	gobEncoder := gob.NewEncoder(base64Encoder)
-	_ = gobEncoder.Encode(p)
-	_ = base64Encoder.Close()
-	return b.String()
+	buf := make([]byte, 12)
+	binary.BigEndian.PutUint64(buf[:8], uint64(p.Offset))
+	binary.BigEndian.PutUint32(buf[8:12], p.Checksum)
+	return base64.URLEncoding.EncodeToString(buf)
+
 }
 
 func (p *Paginator) ParsePageToken(request Request) (PageToken, error) {
@@ -57,9 +53,11 @@ func (p *Paginator) ParsePageToken(request Request) (PageToken, error) {
 }
 
 func decodePageToken(s string, p *PageToken) error {
-	dec := gob.NewDecoder(base64.NewDecoder(base64.URLEncoding, strings.NewReader(s)))
-	if err := dec.Decode(p); err != nil && !errors.Is(err, io.EOF) {
-		return err
+	data, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return fmt.Errorf("invalid token: %w", err)
 	}
+	p.Offset = int64(binary.BigEndian.Uint64(data[0:8]))
+	p.Checksum = binary.BigEndian.Uint32(data[8:12])
 	return nil
 }
