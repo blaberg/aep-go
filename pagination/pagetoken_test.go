@@ -25,7 +25,7 @@ func TestParseOffsetPageToken(t *testing.T) {
 		}
 		pageToken2, err := p.ParsePageToken(request2)
 		assert.NilError(t, err)
-		assert.Equal(t, int32(10), pageToken2.Offset)
+		assert.Equal(t, int64(10), pageToken2.Offset)
 		request3 := &booksv1.ListBooksRequest{
 			Parent:      "shelves/1",
 			MaxPageSize: 30,
@@ -33,7 +33,7 @@ func TestParseOffsetPageToken(t *testing.T) {
 		}
 		pageToken3, err := p.ParsePageToken(request3)
 		assert.NilError(t, err)
-		assert.Equal(t, int32(30), pageToken3.Offset)
+		assert.Equal(t, int64(30), pageToken3.Offset)
 	})
 
 	t.Run("invalid format", func(t *testing.T) {
