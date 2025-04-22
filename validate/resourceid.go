@@ -11,6 +11,7 @@ import (
 
 var validMiddleChars = regexp.MustCompile(`^[a-z0-9-]+$`)
 
+// ResourceID validates that a resource ID follows the AEP design specification.
 func ResourceID(id string) error {
 	if len(id) == 0 {
 		return fmt.Errorf("resource ID can not be empty")
