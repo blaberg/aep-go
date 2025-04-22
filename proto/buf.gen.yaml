@@ -1,0 +1,18 @@
+version: v2
+managed:
+  enabled: true
+  disable:
+    - file_option: go_package
+      module: buf.build/googleapis/googleapis
+  override:
+    - file_option: go_package_prefix
+      value: github.com/blaberg/proto/gen/
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen
+    opt: paths=source_relative
+  - local: ["go", "run", "github.com/blaberg/aep-go/cmd/protoc-gen-go-aep"]
+    out: gen
+    opt: paths=source_relative
+inputs:
+  - directory: .

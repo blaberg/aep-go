@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package example.books.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+message Book {
+    option (google.api.resource) = {
+        type: "example/Book"
+        pattern: "authors/{author}/books/{book}"
+        pattern: "books/{book}"
+        singular: "book"
+        plural: "books"
+    };
+
+    // The resource path for the book.
+    string path = 1 [(google.api.field_behavior) = IDENTIFIER];
+    // The creation timestamp of the book.
+    google.protobuf.Timestamp create_time = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+    // The last update timestamp of the book.
+    //
+    // Updated when create/update/delete operation is performed.
+    google.protobuf.Timestamp update_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+    // The deletion timestamp of the book.
+    google.protobuf.Timestamp delete_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+    // The book's display name.
+    string display_name = 5[(google.api.field_behavior) = REQUIRED];
+  }
