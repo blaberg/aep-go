@@ -63,6 +63,3 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 This project is licensed under the [LICENSE NAME] - see the [LICENSE](LICENSE) file for details.
 
-## Security
-
-Please report any security issues to [SECURITY.md](SECURITY.md).
