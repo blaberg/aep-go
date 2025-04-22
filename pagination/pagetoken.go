@@ -6,11 +6,14 @@ import (
 	"fmt"
 )
 
+// PageToken represents a pagination token with an offset and a checksum used for validating pagination sequences.
 type PageToken struct {
 	Offset   int64
 	Checksum uint32
 }
 
+// Next generates the next PageToken by incrementing the offset using the given page size if more pages are available.
+// If hasMore is false, it returns nil indicating there are no more pages.
 func (p *PageToken) Next(hasMore bool, pageSize int32) *PageToken {
 	if !hasMore {
 		return nil
@@ -21,14 +24,15 @@ func (p *PageToken) Next(hasMore bool, pageSize int32) *PageToken {
 	}
 }
 
+// String returns the Base64 URL-encoded string representation of the PageToken's offset and checksum fields.
 func (p *PageToken) String() string {
 	buf := make([]byte, 12)
 	binary.BigEndian.PutUint64(buf[:8], uint64(p.Offset))
 	binary.BigEndian.PutUint32(buf[8:12], p.Checksum)
 	return base64.URLEncoding.EncodeToString(buf)
-
 }
 
+// ParsePageToken decodes and validates a pagination token from the given request, returning the corresponding PageToken.
 func (p *Paginator) ParsePageToken(request Request) (PageToken, error) {
 	checksum, err := calculateRequestChecksum(request)
 	if err != nil {

@@ -6,6 +6,8 @@ import (
 	"reflect"
 )
 
+// Request defines the interface for paginated API requests.
+// Implementations must provide methods to get the page token and maximum page size.
 type Request interface {
 	GetPageToken() string
 	GetMaxPageSize() int32
