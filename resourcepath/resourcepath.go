@@ -6,26 +6,25 @@ import (
 	"iter"
 )
 
-// todo: det slutgiliga målet är att vi vill kunna generara rsurrser som använder den här funktionen.
-// De ska genereras som {message}ResourcePath. Jag vill att de ska ha GetOrganization() funktioner som returnerar strings
-// för varje segmnet av resurs namnet. Tror det blir en snyggare lösning än det vi har nu
-// alla validate och hasWilcard functioner ska ckså finnas på det
-// generellt tror jag vi kan göra paketet mycket simplare
-
+// ResourcePath represents an AEP resource path.
 type ResourcePath struct {
 	elements map[string]string
 }
 
+// Get returns the value of the element.
+// If the element is not found, an empty string is returned.
 func (p ResourcePath) Get(element string) string {
 	return p.elements[element]
 }
 
+// NewResourcePath creates a new ResourcePath.
 func NewResourcePath(elements map[string]string) *ResourcePath {
 	return &ResourcePath{
 		elements: elements,
 	}
 }
 
+// ParseString parses a path and a pattern and returns a ResourcePath.
 func ParseString(path, pattern string) (*ResourcePath, error) {
 	if pattern == "" {
 		return nil, fmt.Errorf("pattern can't be empty")

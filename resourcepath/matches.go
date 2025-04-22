@@ -4,6 +4,7 @@ import (
 	"iter"
 )
 
+// Matches returns true if the path matches the pattern.
 func Matches(pattern, path string) bool {
 	patternElements := Elements(pattern)
 	next, stop := iter.Pull(patternElements)
