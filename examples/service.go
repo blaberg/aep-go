@@ -5,13 +5,17 @@ import (
 	"time"
 
 	"github.com/blaberg/aep-go/pagination"
+	booksv1 "github.com/blaberg/aep-go/proto/gen/example/books/v1"
 	bookv1 "github.com/blaberg/aep-go/proto/gen/example/books/v1"
 	"github.com/blaberg/aep-go/resourceid"
 	"github.com/blaberg/aep-go/validate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+var _ booksv1.BookServiceServer = &Service{}
 
 // Service implements the BookService
 type Service struct {
@@ -102,4 +106,18 @@ func (s *Service) ListBooks(ctx context.Context, req *bookv1.ListBooksRequest) (
 		Results:       books,
 		NextPageToken: nextPageToken,
 	}, nil
+}
+
+func (s *Service) DeleteBook(
+	context.Context,
+	*booksv1.DeleteBookRequest,
+) (*emptypb.Empty, error) {
+	panic("implement me")
+}
+
+func (s *Service) UpdateBook(
+	context.Context,
+	*booksv1.UpdateBookRequest,
+) (*booksv1.Book, error) {
+	panic("implement me")
 }

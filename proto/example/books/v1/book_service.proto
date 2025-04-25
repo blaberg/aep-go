@@ -10,7 +10,7 @@ import "google/api/resource.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
-service FreightService {
+service BookService {
     // Get a book
     rpc GetBook(GetBookRequest) returns (Book) {
         option (google.api.http) = {
