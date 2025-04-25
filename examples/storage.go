@@ -3,31 +3,31 @@ package examples
 import (
 	"sync"
 
-	bookv1 "github.com/blaberg/aep-go/proto/gen/example/books/v1"
+	booksv1 "github.com/blaberg/aep-go/proto/gen/example/books/v1"
 )
 
 // Storage provides in-memory storage for books
 type Storage struct {
 	mu    sync.RWMutex
-	books []*bookv1.Book
+	books []*booksv1.Book
 }
 
 // NewStorage creates a new storage instance
 func NewStorage() *Storage {
 	return &Storage{
-		books: make([]*bookv1.Book, 0),
+		books: make([]*booksv1.Book, 0),
 	}
 }
 
 // Create stores a new book
-func (s *Storage) Create(book *bookv1.Book) {
+func (s *Storage) Create(book *booksv1.Book) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.books = append(s.books, book)
 }
 
 // Get retrieves a book by its path
-func (s *Storage) Get(path string) (*bookv1.Book, bool) {
+func (s *Storage) Get(path string) (*booksv1.Book, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -40,13 +40,13 @@ func (s *Storage) Get(path string) (*bookv1.Book, bool) {
 }
 
 // List returns books that match the given parent path with pagination
-func (s *Storage) List(parent string, offset int64, pageSize int32) ([]*bookv1.Book, bool, error) {
+func (s *Storage) List(parent string, offset int64, pageSize int32) ([]*booksv1.Book, bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var filteredBooks []*bookv1.Book
+	var filteredBooks []*booksv1.Book
 	for _, book := range s.books {
-		path, err := bookv1.ParseAuthorBookResourcePath(book.Path)
+		path, err := booksv1.ParseAuthorBookResourcePath(book.Path)
 		if err != nil {
 			return nil, false, err
 		}

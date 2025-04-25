@@ -6,7 +6,6 @@ import (
 
 	"github.com/blaberg/aep-go/pagination"
 	booksv1 "github.com/blaberg/aep-go/proto/gen/example/books/v1"
-	bookv1 "github.com/blaberg/aep-go/proto/gen/example/books/v1"
 	"github.com/blaberg/aep-go/resourceid"
 	"github.com/blaberg/aep-go/validate"
 	"google.golang.org/grpc/codes"
@@ -24,7 +23,7 @@ type Service struct {
 }
 
 // CreateBook implements the CreateBook RPC
-func (s *Service) CreateBook(ctx context.Context, req *bookv1.CreateBookRequest) (*bookv1.Book, error) {
+func (s *Service) CreateBook(ctx context.Context, req *booksv1.CreateBookRequest) (*booksv1.Book, error) {
 	// Generate book ID if not provided
 	bookID := req.Id
 	if bookID == "" {
@@ -35,11 +34,11 @@ func (s *Service) CreateBook(ctx context.Context, req *bookv1.CreateBookRequest)
 	}
 
 	// Create the book's resource path
-	path := bookv1.NewBookPath(bookID)
+	path := booksv1.NewBookPath(bookID)
 
 	// Create the book
 	now := timestamppb.New(time.Now())
-	book := &bookv1.Book{
+	book := &booksv1.Book{
 		Path:        path.String(),
 		DisplayName: req.Book.DisplayName,
 		CreateTime:  now,
@@ -53,9 +52,9 @@ func (s *Service) CreateBook(ctx context.Context, req *bookv1.CreateBookRequest)
 }
 
 // GetBook implements the GetBook RPC
-func (s *Service) GetBook(ctx context.Context, req *bookv1.GetBookRequest) (*bookv1.Book, error) {
+func (s *Service) GetBook(ctx context.Context, req *booksv1.GetBookRequest) (*booksv1.Book, error) {
 	// Validate path format
-	path, err := bookv1.ParseBookResourcePath(req.GetPath())
+	path, err := booksv1.ParseBookResourcePath(req.GetPath())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid resource path format: %v", err)
 	}
@@ -70,9 +69,9 @@ func (s *Service) GetBook(ctx context.Context, req *bookv1.GetBookRequest) (*boo
 }
 
 // ListBooks implements the ListBooks RPC
-func (s *Service) ListBooks(ctx context.Context, req *bookv1.ListBooksRequest) (*bookv1.ListBooksResponse, error) {
+func (s *Service) ListBooks(ctx context.Context, req *booksv1.ListBooksRequest) (*booksv1.ListBooksResponse, error) {
 	// Validate parent format
-	path, err := bookv1.ParseAuthorBookResourcePath(req.GetParent())
+	path, err := booksv1.ParseAuthorBookResourcePath(req.GetParent())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid parent format: %v", err)
 	}
@@ -89,8 +88,8 @@ func (s *Service) ListBooks(ctx context.Context, req *bookv1.ListBooksRequest) (
 		return nil, status.Errorf(codes.Internal, "failed to list books: %v", err)
 	}
 	if books == nil {
-		return &bookv1.ListBooksResponse{
-			Results:       []*bookv1.Book{},
+		return &booksv1.ListBooksResponse{
+			Results:       []*booksv1.Book{},
 			NextPageToken: "",
 		}, nil
 	}
@@ -102,7 +101,7 @@ func (s *Service) ListBooks(ctx context.Context, req *bookv1.ListBooksRequest) (
 		nextPageToken = nextToken.String()
 	}
 
-	return &bookv1.ListBooksResponse{
+	return &booksv1.ListBooksResponse{
 		Results:       books,
 		NextPageToken: nextPageToken,
 	}, nil
