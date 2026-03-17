@@ -1,11 +1,11 @@
 module github.com/blaberg/aep-go
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	golang.org/x/text v0.34.0
+	golang.org/x/text v0.35.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217
 	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
