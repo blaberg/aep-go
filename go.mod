@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	golang.org/x/text v0.34.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217
-	google.golang.org/grpc v1.79.1
+	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
 	gotest.tools/v3 v3.5.2
 )
