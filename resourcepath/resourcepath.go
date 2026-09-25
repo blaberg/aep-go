@@ -42,12 +42,15 @@ func ParseString(path, pattern string) (*ResourcePath, error) {
 			return nil, fmt.Errorf("element %s: %w", pattrElem, io.ErrUnexpectedEOF)
 		}
 		if !pattrElem.IsVariable() {
-			if pattrElem.GetLiteral() != pathElem.GetLiteral() {
+			if pattrElem.GetLiteral() != Literal(pathElem) {
 				return nil, fmt.Errorf("element %s: got %s", pattrElem, pathElem)
 			}
 			continue
 		}
-		elements[string(pattrElem.GetLiteral())] = string(pathElem.GetLiteral())
+		if len(pathElem) == 0 {
+			return nil, fmt.Errorf("element %s: empty value", pattrElem)
+		}
+		elements[string(pattrElem.GetLiteral())] = string(pathElem)
 	}
 	if _, ok := next(); ok {
 		return nil, fmt.Errorf("got trailing elements in path")
