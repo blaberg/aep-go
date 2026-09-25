@@ -8,53 +8,67 @@
 package booksv1
 
 import (
+	fmt "fmt"
 	resourcepath "github.com/blaberg/aep-go/resourcepath"
-	strings "strings"
 )
 
+// ChapterResourcePattern is a resource pattern for Chapter.
+type ChapterResourcePattern string
+
+const (
+	BookChapterPattern ChapterResourcePattern = "books/{book_id}/chapters/{chapter_id}"
+)
+
+// ChapterResourcePath is a resource path for Chapter.
 type ChapterResourcePath struct {
-	path *resourcepath.ResourcePath
+	path resourcepath.ResourcePath
 }
 
+// ParseChapterResourcePath parses a resource path for Chapter.
+// The patterns are tried in the order they are declared.
 func ParseChapterResourcePath(p string) (*ChapterResourcePath, error) {
-	path, err := resourcepath.ParseString(p, "books/{book}/chapters/{chapter}")
+	for _, pattern := range []ChapterResourcePattern{
+		BookChapterPattern,
+	} {
+		path, err := resourcepath.ParseString(p, string(pattern))
+		if err != nil {
+			continue
+		}
+		return &ChapterResourcePath{path: *path}, nil
+	}
+	return nil, fmt.Errorf("%q matches no Chapter pattern", p)
+}
+
+// NewBookChapterResourcePath creates a ChapterResourcePath with the pattern "books/{book_id}/chapters/{chapter_id}".
+func NewBookChapterResourcePath(bookId, chapterId string) (*ChapterResourcePath, error) {
+	path, err := resourcepath.NewResourcePath(string(BookChapterPattern), map[string]string{
+		"book_id":    bookId,
+		"chapter_id": chapterId,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return &ChapterResourcePath{
-		path: path,
-	}, nil
+	return &ChapterResourcePath{path: *path}, nil
 }
 
-func NewChapterPath(
-	book string,
-	chapter string,
-) *ChapterResourcePath {
-	segments := map[string]string{
-		"book":    book,
-		"chapter": chapter,
-	}
-	return &ChapterResourcePath{
-		path: resourcepath.NewResourcePath(segments),
-	}
+// Pattern returns the pattern of the resource path.
+func (p *ChapterResourcePath) Pattern() ChapterResourcePattern {
+	return ChapterResourcePattern(p.path.Pattern())
 }
 
+// GetBookId returns the value of "book_id",
+// or an empty string if the pattern of the resource path does not have it.
+func (p *ChapterResourcePath) GetBookId() string {
+	return p.path.Get("book_id")
+}
+
+// GetChapterId returns the value of "chapter_id",
+// or an empty string if the pattern of the resource path does not have it.
+func (p *ChapterResourcePath) GetChapterId() string {
+	return p.path.Get("chapter_id")
+}
+
+// String returns the resource path as a string.
 func (p *ChapterResourcePath) String() string {
-	return strings.Join(
-		[]string{
-			"books",
-			p.path.Get("book"),
-			"chapters",
-			p.path.Get("chapter"),
-		},
-		"/",
-	)
-}
-
-func (p *ChapterResourcePath) GetBook() string {
-	return p.path.Get("book")
-}
-
-func (p *ChapterResourcePath) GetChapter() string {
-	return p.path.Get("chapter")
+	return p.path.String()
 }

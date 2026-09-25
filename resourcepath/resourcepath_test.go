@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/protobuf/testing/protocmp"
 	"gotest.tools/v3/assert"
 )
 
@@ -17,52 +16,44 @@ const (
 func Test_ResourcePath(t *testing.T) {
 	t.Parallel()
 	for _, tt := range []struct {
-		name    string
-		path    string
-		pattern string
-		resp    *ResourcePath
-		err     string
+		name     string
+		path     string
+		pattern  string
+		elements map[string]string
+		err      string
 	}{
 		{
 			name:    "valid organization path",
 			path:    "organizations/test-org",
 			pattern: orgPattern,
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "test-org",
-				},
+			elements: map[string]string{
+				"organization": "test-org",
 			},
 		},
 		{
 			name:    "valid",
 			path:    "organizations/test-org/users/test-user",
 			pattern: userPattern,
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"user":         "test-user",
-					"organization": "test-org",
-				},
+			elements: map[string]string{
+				"user":         "test-user",
+				"organization": "test-org",
 			},
 		},
 		{
 			name:    "valid singleton",
 			path:    "organizations/test-org/logs",
 			pattern: singleton,
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "test-org",
-				},
+			elements: map[string]string{
+				"organization": "test-org",
 			},
 		},
 		{
 			name:    "valid wildcard",
 			path:    "organizations/-/users/test-user",
 			pattern: userPattern,
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "-",
-					"user":         "test-user",
-				},
+			elements: map[string]string{
+				"organization": "-",
+				"user":         "test-user",
 			},
 		},
 		{
@@ -133,41 +124,39 @@ func Test_ResourcePath(t *testing.T) {
 			name:    "valid unreserved characters",
 			path:    "organizations/Test.org_1~x",
 			pattern: orgPattern,
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "Test.org_1~x",
-				},
+			elements: map[string]string{
+				"organization": "Test.org_1~x",
 			},
 		},
 		{
 			name:    "valid variable syntax in value",
 			pattern: orgPattern,
 			path:    "organizations/{test-org}",
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "{test-org}",
-				},
+			elements: map[string]string{
+				"organization": "{test-org}",
 			},
 		},
 		{
 			name:    "valid space and percent in value",
 			pattern: orgPattern,
 			path:    "organizations/test org%20",
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "test org%20",
-				},
+			elements: map[string]string{
+				"organization": "test org%20",
 			},
 		},
 		{
 			name:    "valid non-ascii value",
 			pattern: orgPattern,
 			path:    "organizations/tést",
-			resp: &ResourcePath{
-				elements: map[string]string{
-					"organization": "tést",
-				},
+			elements: map[string]string{
+				"organization": "tést",
 			},
+		},
+		{
+			name:    "repeated variable",
+			pattern: "a/{x}/b/{x}",
+			path:    "a/v/b/w",
+			err:     "element {x}: repeated variable",
 		},
 		{
 			name:    "variable syntax in collection",
@@ -183,8 +172,136 @@ func Test_ResourcePath(t *testing.T) {
 				assert.Error(t, err, tt.err)
 			} else {
 				assert.NilError(t, err)
-				assert.DeepEqual(t, path, tt.resp, protocmp.Transform(), cmp.AllowUnexported(ResourcePath{}))
+				want := &ResourcePath{pattern: tt.pattern, elements: tt.elements}
+				assert.DeepEqual(t, path, want, cmp.AllowUnexported(ResourcePath{}))
+				assert.Equal(t, path.Pattern(), tt.pattern)
+				assert.Equal(t, path.String(), tt.path)
 			}
 		})
 	}
+}
+
+func TestNewResourcePath(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		name    string
+		pattern string
+		values  map[string]string
+		want    string
+		err     string
+	}{
+		{
+			name:    "single variable",
+			pattern: orgPattern,
+			values:  map[string]string{"organization": "test-org"},
+			want:    "organizations/test-org",
+		},
+		{
+			name:    "multiple variables",
+			pattern: userPattern,
+			values: map[string]string{
+				"organization": "test-org",
+				"user":         "test-user",
+			},
+			want: "organizations/test-org/users/test-user",
+		},
+		{
+			name:    "trailing literal",
+			pattern: singleton,
+			values:  map[string]string{"organization": "test-org"},
+			want:    "organizations/test-org/logs",
+		},
+		{
+			name:    "wildcard",
+			pattern: userPattern,
+			values: map[string]string{
+				"organization": "-",
+				"user":         "test-user",
+			},
+			want: "organizations/-/users/test-user",
+		},
+		{
+			name:   "empty pattern",
+			values: map[string]string{"organization": "test-org"},
+			err:    "pattern can't be empty",
+		},
+		{
+			name:    "missing value",
+			pattern: userPattern,
+			values:  map[string]string{"organization": "test-org"},
+			err:     "element {user}: missing value",
+		},
+		{
+			name:    "nil values",
+			pattern: orgPattern,
+			err:     "element {organization}: missing value",
+		},
+		{
+			name:    "empty value",
+			pattern: orgPattern,
+			values:  map[string]string{"organization": ""},
+			err:     "element {organization}: empty value",
+		},
+		{
+			name:    "value with slash",
+			pattern: orgPattern,
+			values:  map[string]string{"organization": "test/org"},
+			err:     `element {organization}: value "test/org" contains "/"`,
+		},
+		{
+			name:    "repeated variable",
+			pattern: "a/{x}/b/{x}",
+			values:  map[string]string{"x": "v"},
+			err:     "element {x}: repeated variable",
+		},
+		{
+			name:    "no variables",
+			pattern: "config",
+			values:  map[string]string{},
+			want:    "config",
+		},
+		{
+			name:    "variables not in pattern",
+			pattern: "shelves/{shelf}",
+			values: map[string]string{
+				"shelf": "top",
+				"desks": "big",
+				"chair": "comfy",
+			},
+			err: "element {chair}: not in pattern",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			path, err := NewResourcePath(tt.pattern, tt.values)
+			if tt.err != "" {
+				assert.Error(t, err, tt.err)
+				return
+			}
+			assert.NilError(t, err)
+			assert.Equal(t, path.Pattern(), tt.pattern)
+			assert.Equal(t, path.String(), tt.want)
+			// Every path created with NewResourcePath can be parsed back.
+			parsed, err := ParseString(path.String(), tt.pattern)
+			assert.NilError(t, err)
+			assert.DeepEqual(t, parsed, path, cmp.AllowUnexported(ResourcePath{}))
+		})
+	}
+}
+
+func TestNewResourcePath_CopiesValues(t *testing.T) {
+	t.Parallel()
+	values := map[string]string{"organization": "test-org"}
+	path, err := NewResourcePath(orgPattern, values)
+	assert.NilError(t, err)
+	values["organization"] = "changed"
+	assert.Equal(t, path.String(), "organizations/test-org")
+}
+
+func TestResourcePath_ZeroValue(t *testing.T) {
+	t.Parallel()
+	var path ResourcePath
+	assert.Equal(t, path.Pattern(), "")
+	assert.Equal(t, path.String(), "")
+	assert.Equal(t, path.Get("organization"), "")
 }

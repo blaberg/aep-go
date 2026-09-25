@@ -9,8 +9,8 @@ import "google/protobuf/timestamp.proto";
 message Book {
     option (google.api.resource) = {
         type: "example/Book"
-        pattern: "authors/{author}/books/{book}"
-        pattern: "books/{book}"
+        pattern: "authors/{author_id}/books/{book_id}"
+        pattern: "books/{book_id}"
         singular: "book"
         plural: "books"
     };

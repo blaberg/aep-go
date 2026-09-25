@@ -11,48 +11,63 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 
 service BookService {
-    // Get a book
-    rpc GetBook(GetBookRequest) returns (Book) {
-        option (google.api.http) = {
-          get: "/v1/{path=books/*}"
-        };
-        option (google.api.method_signature) = "path";
-      }
+  // Get a book.
+  rpc GetBook(GetBookRequest) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/{path=authors/*/books/*}"
+      additional_bindings {get: "/v1/{path=books/*}"}
+    };
+    option (google.api.method_signature) = "path";
+  }
 
-      rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
-        option (google.api.http) = {
-          get: "/v1/{parent=publishers/*}/books"
-        };
-        option (google.api.method_signature) = "parent";
-      }
+  // List the books of an author, or the top-level books.
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=authors/*}/books"
+      additional_bindings {get: "/v1/books"}
+    };
+    option (google.api.method_signature) = "parent";
+  }
 
-    rpc CreateBook(CreateBookRequest) returns (Book) {
-      option (google.api.http) = {
-        post: "/v1/{parent=publishers/*}/books"
+  // Create a book, written by an author or top-level.
+  rpc CreateBook(CreateBookRequest) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1/{parent=authors/*}/books"
+      body: "book"
+      additional_bindings {
+        post: "/v1/books"
         body: "book"
-      };
-      option (google.api.method_signature) = "parent,book";
-    }
+      }
+    };
+    option (google.api.method_signature) = "parent,book,id";
+  }
 
-    rpc UpdateBook(UpdateBookRequest) returns (Book) {
-      option (google.api.http) = {
-        patch: "/v1/{path=publishers/*/books/*}"
+  // Update a book.
+  rpc UpdateBook(UpdateBookRequest) returns (Book) {
+    option (google.api.http) = {
+      patch: "/v1/{path=authors/*/books/*}"
+      body: "book"
+      additional_bindings {
+        patch: "/v1/{path=books/*}"
         body: "book"
-      };
-      option (google.api.method_signature) = "book,update_mask";
-    }
+      }
+    };
+    option (google.api.method_signature) = "path,book,update_mask";
+  }
 
-    rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty) {
-      option (google.api.http) = {
-        delete: "/v1/{path=publishers/*/books/*}"
-      };
-      option (google.api.method_signature) = "path";
-    }
-
+  // Delete a book.
+  rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{path=authors/*/books/*}"
+      additional_bindings {delete: "/v1/{path=books/*}"}
+    };
+    option (google.api.method_signature) = "path";
+  }
 }
 
 message GetBookRequest {
     // The path of the book to retrieve.
+    // Format: authors/{author_id}/books/{book_id} or books/{book_id}
     string path = 1 [
       (google.api.field_behavior) = REQUIRED,
       (google.api.resource_reference) = {
@@ -61,11 +76,12 @@ message GetBookRequest {
   }
 
   message ListBooksRequest {
-    // The publisher to list books for.
+    // The author to list books for, or empty to list the top-level books.
+    // Format: authors/{author_id}
     string parent = 1 [
-      (google.api.field_behavior) = REQUIRED,
+      (google.api.field_behavior) = OPTIONAL,
       (google.api.resource_reference) = {
-        child_type: "library.googleapis.com/Book"
+        child_type: "example/Book"
       }];
 
     // The maximum number of books to return.
@@ -79,7 +95,7 @@ message GetBookRequest {
   }
 
   message ListBooksResponse {
-    // The books under the umbrella of the given publisher.
+    // The books of the given author, or the top-level books.
     repeated Book results = 1;
 
     // The token to retrieve the next page. This is populated if and only if
@@ -88,12 +104,12 @@ message GetBookRequest {
   }
 
   message CreateBookRequest {
-    // The parent resource where this book will be created.
-    // Format: publishers/{publisher}
+    // The author who wrote the book, or empty to create a top-level book.
+    // Format: authors/{author_id}
     string parent = 1 [
-      (google.api.field_behavior) = REQUIRED,
+      (google.api.field_behavior) = OPTIONAL,
       (google.api.resource_reference) = {
-        child_type: "library.example.com/Book"
+        child_type: "example/Book"
       }];
 
     // The ID to use for the book, which will become the final component of
@@ -109,14 +125,14 @@ message GetBookRequest {
 
   message UpdateBookRequest {
     // The path of the book to update.
+    // Format: authors/{author_id}/books/{book_id} or books/{book_id}
     string path = 1 [
       (google.api.field_behavior) = REQUIRED,
       (google.api.resource_reference) = {
-        type: "library.googleapis.com/Book"
+        type: "example/Book"
       }];
 
     // The value to update the book to.
-    // Format: publishers/{publisher}/books/{book}
     Book book = 2 [(google.api.field_behavior) = REQUIRED];
 
     // The list of fields to update.
@@ -125,10 +141,10 @@ message GetBookRequest {
 
   message DeleteBookRequest {
     // The path of the book to delete.
-    // Format: publishers/{publisher}/books/{book}
+    // Format: authors/{author_id}/books/{book_id} or books/{book_id}
     string path = 1 [
       (google.api.field_behavior) = REQUIRED,
       (google.api.resource_reference) = {
-        type: "library.example.com/Book"
+        type: "example/Book"
       }];
   }

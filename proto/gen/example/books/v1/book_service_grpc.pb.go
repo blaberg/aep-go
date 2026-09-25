@@ -31,11 +31,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BookServiceClient interface {
-	// Get a book
+	// Get a book.
 	GetBook(ctx context.Context, in *GetBookRequest, opts ...grpc.CallOption) (*Book, error)
+	// List the books of an author, or the top-level books.
 	ListBooks(ctx context.Context, in *ListBooksRequest, opts ...grpc.CallOption) (*ListBooksResponse, error)
+	// Create a book, written by an author or top-level.
 	CreateBook(ctx context.Context, in *CreateBookRequest, opts ...grpc.CallOption) (*Book, error)
+	// Update a book.
 	UpdateBook(ctx context.Context, in *UpdateBookRequest, opts ...grpc.CallOption) (*Book, error)
+	// Delete a book.
 	DeleteBook(ctx context.Context, in *DeleteBookRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -101,11 +105,15 @@ func (c *bookServiceClient) DeleteBook(ctx context.Context, in *DeleteBookReques
 // All implementations should embed UnimplementedBookServiceServer
 // for forward compatibility.
 type BookServiceServer interface {
-	// Get a book
+	// Get a book.
 	GetBook(context.Context, *GetBookRequest) (*Book, error)
+	// List the books of an author, or the top-level books.
 	ListBooks(context.Context, *ListBooksRequest) (*ListBooksResponse, error)
+	// Create a book, written by an author or top-level.
 	CreateBook(context.Context, *CreateBookRequest) (*Book, error)
+	// Update a book.
 	UpdateBook(context.Context, *UpdateBookRequest) (*Book, error)
+	// Delete a book.
 	DeleteBook(context.Context, *DeleteBookRequest) (*emptypb.Empty, error)
 }
 

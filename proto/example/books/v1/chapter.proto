@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 message Chapter {
     option (google.api.resource) = {
         type: "example/Chapter"
-        pattern: "books/{book}/chapters/{chapter}"
+        pattern: "books/{book_id}/chapters/{chapter_id}"
         singular: "chapter"
         plural: "chapters"
     };

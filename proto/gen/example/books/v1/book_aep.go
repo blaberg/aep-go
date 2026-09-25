@@ -10,138 +10,78 @@ package booksv1
 import (
 	fmt "fmt"
 	resourcepath "github.com/blaberg/aep-go/resourcepath"
-	strings "strings"
 )
 
-type AuthorBookResourcePath struct {
-	path *resourcepath.ResourcePath
-}
+// BookResourcePattern is a resource pattern for Book.
+type BookResourcePattern string
 
-func ParseAuthorBookResourcePath(p string) (*AuthorBookResourcePath, error) {
-	path, err := resourcepath.ParseString(p, "authors/{author}/books/{book}")
-	if err != nil {
-		return nil, err
-	}
-	return &AuthorBookResourcePath{
-		path: path,
-	}, nil
-}
+const (
+	AuthorBookPattern BookResourcePattern = "authors/{author_id}/books/{book_id}"
+	BookPattern       BookResourcePattern = "books/{book_id}"
+)
 
-func NewAuthorBookPath(
-	author string,
-	book string,
-) *AuthorBookResourcePath {
-	segments := map[string]string{
-		"author": author,
-		"book":   book,
-	}
-	return &AuthorBookResourcePath{
-		path: resourcepath.NewResourcePath(segments),
-	}
-}
-
-func (p *AuthorBookResourcePath) String() string {
-	return strings.Join(
-		[]string{
-			"authors",
-			p.path.Get("author"),
-			"books",
-			p.path.Get("book"),
-		},
-		"/",
-	)
-}
-
-func (p *AuthorBookResourcePath) GetAuthor() string {
-	return p.path.Get("author")
-}
-
-func (p *AuthorBookResourcePath) GetBook() string {
-	return p.path.Get("book")
-}
-
+// BookResourcePath is a resource path for Book.
 type BookResourcePath struct {
-	path *resourcepath.ResourcePath
+	path resourcepath.ResourcePath
 }
 
+// ParseBookResourcePath parses a resource path for Book.
+// The patterns are tried in the order they are declared.
 func ParseBookResourcePath(p string) (*BookResourcePath, error) {
-	path, err := resourcepath.ParseString(p, "books/{book}")
+	for _, pattern := range []BookResourcePattern{
+		AuthorBookPattern,
+		BookPattern,
+	} {
+		path, err := resourcepath.ParseString(p, string(pattern))
+		if err != nil {
+			continue
+		}
+		return &BookResourcePath{path: *path}, nil
+	}
+	return nil, fmt.Errorf("%q matches no Book pattern", p)
+}
+
+// NewAuthorBookResourcePath creates a BookResourcePath with the pattern "authors/{author_id}/books/{book_id}".
+func NewAuthorBookResourcePath(authorId, bookId string) (*BookResourcePath, error) {
+	path, err := resourcepath.NewResourcePath(string(AuthorBookPattern), map[string]string{
+		"author_id": authorId,
+		"book_id":   bookId,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return &BookResourcePath{
-		path: path,
-	}, nil
+	return &BookResourcePath{path: *path}, nil
 }
 
-func NewBookPath(
-	book string,
-) *BookResourcePath {
-	segments := map[string]string{
-		"book": book,
+// NewBookResourcePath creates a BookResourcePath with the pattern "books/{book_id}".
+func NewBookResourcePath(bookId string) (*BookResourcePath, error) {
+	path, err := resourcepath.NewResourcePath(string(BookPattern), map[string]string{
+		"book_id": bookId,
+	})
+	if err != nil {
+		return nil, err
 	}
-	return &BookResourcePath{
-		path: resourcepath.NewResourcePath(segments),
-	}
+	return &BookResourcePath{path: *path}, nil
 }
 
+// Pattern returns the pattern of the resource path.
+func (p *BookResourcePath) Pattern() BookResourcePattern {
+	return BookResourcePattern(p.path.Pattern())
+}
+
+// GetAuthorId returns the value of "author_id",
+// or an empty string if the pattern of the resource path does not have it.
+func (p *BookResourcePath) GetAuthorId() string {
+	return p.path.Get("author_id")
+}
+
+// GetBookId returns the value of "book_id",
+// or an empty string if the pattern of the resource path does not have it.
+func (p *BookResourcePath) GetBookId() string {
+	return p.path.Get("book_id")
+}
+
+// String returns the resource path as a string.
 func (p *BookResourcePath) String() string {
-	return strings.Join(
-		[]string{
-			"books",
-			p.path.Get("book"),
-		},
-		"/",
-	)
-}
-
-func (p *BookResourcePath) GetBook() string {
-	return p.path.Get("book")
-}
-
-type isMultipattern interface {
-	isMultipattern()
-}
-
-func (*AuthorBookResourcePath) isMultipattern() {}
-
-func (*BookResourcePath) isMultipattern() {}
-
-func ParseMultipattern(p string) (isMultipattern, error) {
-	switch {
-	case resourcepath.Matches("authors/{author}/books/{book}", p):
-		return ParseAuthorBookResourcePath(p)
-	case resourcepath.Matches("books/{book}", p):
-		return ParseBookResourcePath(p)
-	}
-	return nil, fmt.Errorf("failed to match pattern")
-}
-
-type MultipatternResourcePath struct {
-	path *resourcepath.ResourcePath
-}
-
-func ParseMultipatternResourcePath(p string) (*MultipatternResourcePath, error) {
-	var path *resourcepath.ResourcePath
-	var err error
-	switch {
-	case resourcepath.Matches("authors/{author}/books/{book}", p):
-		path, err = resourcepath.ParseString("authors/{author}/books/{book}", p)
-	case resourcepath.Matches("books/{book}", p):
-		path, err = resourcepath.ParseString("books/{book}", p)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &MultipatternResourcePath{
-		path: path,
-	}, nil
-}
-
-func (p *MultipatternResourcePath) GetAuthor() string {
-	return p.path.Get("author")
-}
-
-func (p *MultipatternResourcePath) GetBook() string {
-	return p.path.Get("book")
+	return p.path.String()
 }

@@ -2,30 +2,59 @@ package genaep
 
 import (
 	"fmt"
-	"log/slog"
+	"strconv"
+	"strings"
 
+	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
 	PluginName              = "protoc-gen-go-aep"
 	generatedFilenameSuffix = "_aep.go"
 	PluginVersion           = "development"
+
+	fmtPackage         = protogen.GoImportPath("fmt")
+	resourcepathImport = protogen.GoImportPath("github.com/blaberg/aep-go/resourcepath")
 )
 
+// Run generates code for all files in the request. Files without resources are skipped.
 func Run(gen *protogen.Plugin) error {
 	for _, f := range gen.Files {
 		if !f.Generate {
 			continue
 		}
-		g := newGeneratedFile(gen, f)
-		g.Skip()
-		err := generateResourcePath(gen, g, f)
+		resources, err := fileResources(f)
 		if err != nil {
-			slog.Error(f.Desc.Path(), "error ", err)
+			return fmt.Errorf("%s: %w", f.Desc.Path(), err)
+		}
+		if len(resources) == 0 {
+			continue
+		}
+		g := newGeneratedFile(gen, f)
+		for _, r := range resources {
+			r.generateResourcePath(g)
 		}
 	}
 	return nil
+}
+
+// fileResources returns the models of the resource messages in a file.
+func fileResources(f *protogen.File) ([]*resource, error) {
+	var resources []*resource
+	for _, m := range f.Messages {
+		descriptor, ok := proto.GetExtension(m.Desc.Options(), annotations.E_Resource).(*annotations.ResourceDescriptor)
+		if !ok || len(descriptor.GetPattern()) == 0 {
+			continue
+		}
+		r, err := newResource(m.GoIdent.GoName, descriptor.GetPattern())
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, r)
+	}
+	return resources, nil
 }
 
 func newGeneratedFile(gen *protogen.Plugin, file *protogen.File) *protogen.GeneratedFile {
@@ -38,6 +67,7 @@ func newGeneratedFile(gen *protogen.Plugin, file *protogen.File) *protogen.Gener
 	g.P("// source: ", file.Desc.Path())
 	g.P()
 	g.P("package ", file.GoPackageName)
+	g.P()
 	return g
 }
 
@@ -46,4 +76,108 @@ func getProtocVersion(gen *protogen.Plugin) string {
 		return fmt.Sprintf("v%v.%v.%v", v.GetMajor(), v.GetMinor(), v.GetPatch())
 	}
 	return "(unknown)"
+}
+
+// generateResourcePath generates the resource path code for a resource.
+func (r *resource) generateResourcePath(g *protogen.GeneratedFile) {
+	r.generatePatterns(g)
+	r.generatePathType(g)
+	r.generateParseFunc(g)
+	r.generateConstructors(g)
+	r.generatePatternMethod(g)
+	r.generateGetters(g)
+	r.generateStringMethod(g)
+}
+
+func (r *resource) generatePatterns(g *protogen.GeneratedFile) {
+	g.P("// ", r.patternType(), " is a resource pattern for ", r.Name, ".")
+	g.P("type ", r.patternType(), " string")
+	g.P()
+	g.P("const (")
+	for _, p := range r.Patterns {
+		g.P(p.Const, " ", r.patternType(), " = ", strconv.Quote(p.Value))
+	}
+	g.P(")")
+	g.P()
+}
+
+func (r *resource) generatePathType(g *protogen.GeneratedFile) {
+	g.P("// ", r.pathType(), " is a resource path for ", r.Name, ".")
+	g.P("type ", r.pathType(), " struct {")
+	g.P("path ", resourcepathImport.Ident("ResourcePath"))
+	g.P("}")
+	g.P()
+}
+
+func (r *resource) generateParseFunc(g *protogen.GeneratedFile) {
+	g.P("// ", r.parseFunc(), " parses a resource path for ", r.Name, ".")
+	g.P("// The patterns are tried in the order they are declared.")
+	g.P("func ", r.parseFunc(), "(p string) (*", r.pathType(), ", error) {")
+	g.P("for _, pattern := range []", r.patternType(), "{")
+	for _, p := range r.Patterns {
+		g.P(p.Const, ",")
+	}
+	g.P("} {")
+	g.P("path, err := ", resourcepathImport.Ident("ParseString"), "(p, string(pattern))")
+	g.P("if err != nil {")
+	g.P("continue")
+	g.P("}")
+	g.P("return &", r.pathType(), "{path: *path}, nil")
+	g.P("}")
+	g.P("return nil, ", fmtPackage.Ident("Errorf"), "(", strconv.Quote("%q matches no "+r.Name+" pattern"), ", p)")
+	g.P("}")
+	g.P()
+}
+
+func (r *resource) generateConstructors(g *protogen.GeneratedFile) {
+	for _, p := range r.Patterns {
+		params := make([]string, 0, len(p.Variables))
+		for _, v := range p.Variables {
+			params = append(params, v.Param)
+		}
+		signature := strings.Join(params, ", ")
+		if signature != "" {
+			signature += " string"
+		}
+		g.P("// ", p.Constructor, " creates a ", r.pathType(), " with the pattern ", strconv.Quote(p.Value), ".")
+		g.P("func ", p.Constructor, "(", signature, ") (*", r.pathType(), ", error) {")
+		g.P("path, err := ", resourcepathImport.Ident("NewResourcePath"), "(string(", p.Const, "), map[string]string{")
+		for _, v := range p.Variables {
+			g.P(strconv.Quote(v.Name), ": ", v.Param, ",")
+		}
+		g.P("})")
+		g.P("if err != nil {")
+		g.P("return nil, err")
+		g.P("}")
+		g.P("return &", r.pathType(), "{path: *path}, nil")
+		g.P("}")
+		g.P()
+	}
+}
+
+func (r *resource) generatePatternMethod(g *protogen.GeneratedFile) {
+	g.P("// Pattern returns the pattern of the resource path.")
+	g.P("func (p *", r.pathType(), ") Pattern() ", r.patternType(), " {")
+	g.P("return ", r.patternType(), "(p.path.Pattern())")
+	g.P("}")
+	g.P()
+}
+
+func (r *resource) generateGetters(g *protogen.GeneratedFile) {
+	for _, v := range r.Variables {
+		g.P("// ", v.Getter, " returns the value of ", strconv.Quote(v.Name), ",")
+		g.P("// or an empty string if the pattern of the resource path does not have it.")
+		g.P("func (p *", r.pathType(), ") ", v.Getter, "() string {")
+		g.P("return p.path.Get(", strconv.Quote(v.Name), ")")
+		g.P("}")
+		g.P()
+	}
+}
+
+func (r *resource) generateStringMethod(g *protogen.GeneratedFile) {
+	g.P("// String returns the resource path as a string.")
+	g.P("func (p *", r.pathType(), ") String() string {")
+	g.P("return p.path.String()")
+	g.P("}")
+	g.P()
 }
